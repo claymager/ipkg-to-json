@@ -1,5 +1,6 @@
 module Lexer
 
+import Data.String.Extra
 import Text.Lexer
 
 public export
@@ -18,8 +19,8 @@ public export
 Show PkgToken where
   show (Comment x) = "Comment (\{x})"
   show Equals = "EQ"
-  show Separator = ","
-  show Dot = "."
+  show Separator = "SEP"
+  show Dot = "DOT"
   show (Operator x) = "Op(\{x})"
   show Space = "<space>"
   show (StringLit x) = "StrLit(\{x})"
@@ -41,14 +42,14 @@ ident = (alpha <|> is '_') <+> many (alpha <|> is '-' <|> is '_' <|> digit <|> i
 export
 tokenMap : TokenMap PkgToken
 tokenMap =
-  [ (is '.', const Dot)
-  , (is ',', const Separator)
-  , (is '=', const Equals)
+  [ (oneOf' operators, Operator)
   , (some (space <|> newline), const Space)
-  , (oneOf' operators, Operator)
   , (comment, Comment)
-  , (stringLit, StringLit)
+  , (stringLit, StringLit . shrink 1)
   , (digits, NatLit . cast)
   , (ident, Identifier)
+  , (is '.', const Dot)
+  , (is ',', const Separator)
+  , (is '=', const Equals)
   ]
 

@@ -1,7 +1,5 @@
 module Parser
 
-import System
-import System.File
 import Data.List
 import Text.Lexer
 import Text.Parser
@@ -76,7 +74,7 @@ deps = do
     mkBound (GT b i :: bs) pkgbs
       = maybe (mkBound bs . { lowerBound := Just b, lowerInclusive := i } $ pkgbs)
               (\_ => fail "Dependency has a lower bound")
-              pkgbs.upperBound
+              pkgbs.lowerBound
     mkBound [] pkgbs = pure pkgbs
 
     depends : Rule Depends
