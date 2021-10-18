@@ -17,12 +17,14 @@ dependsObj (D name (PVB lb li ub ui)) = JObject $ [("name", JString name)] ++
                         , ("upperInclusive", JBoolean ui) ])
 
 pkgToJSON : Package -> JSON
-pkgToJSON (P name version misc depends modules) = JObject
+pkgToJSON (P name version misc depends modules) = JObject $
   [ ("name", JString name)
   , ("depends", JArray (map dependsObj depends))
   , ("version", maybe JNull (JString . show) version)
   , ("modules", JArray (map JString modules))
-  ]
+  ] ++ rest
+  where rest : List (String, JSON)
+        rest = mapSnd JString <$> misc
 
 main : IO ()
 main = do
