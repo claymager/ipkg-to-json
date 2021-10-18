@@ -8,7 +8,7 @@
     flake-utils.lib.eachSystem [ "x86_64-darwin" "x86_64-linux" "i686-linux" ] (system:
       let
         pkgs = import nixpkgs { inherit system; overlays = [ idris2-pkgs.overlay ]; };
-        mypkg = pkgs.idris2.buildIdris {
+        ipkg-to-json = pkgs.idris2.buildIdris {
           src = ./.;
           name = "ipkg-to-json";
           idrisLibraries = [ pkgs.idris2.packages.idris2api ];
@@ -16,9 +16,9 @@
         };
       in
       {
-        defaultPackage = mypkg;
+        defaultPackage = ipkg-to-json;
         devShell = pkgs.mkShell {
-          buildInputs = [ pkgs.idris2.packages.lsp.withPkgs.idris2api pkgs.idris2.withPkgs.idris2api ];
+          buildInputs = [ pkgs.rlwrap pkgs.idris2.packages.lsp.withPkgs.idris2api pkgs.idris2.withPkgs.idris2api ];
           shellHook = ''
             exec fish
             '';

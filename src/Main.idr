@@ -64,6 +64,7 @@ main = do
   (_ :: fn :: []) <- getArgs
     | _ => do putStrLn "Invalid command line"
               exitWith (ExitFailure 1)
+  setupTerm
   coreRun (stMain fn)
     (\err : Error => do putStrLn ("uncaught error: " ++ show err)
                         exitWith (ExitFailure 1))

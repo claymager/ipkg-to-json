@@ -1,9 +1,9 @@
 package ipkgToJson
 version = 0.1
 
-modules = Main
-main = Main
-executable = ipkg-to-json
+sourcedir = "src"
+modules = Parser
 depends = contrib, idris2
 
-sourcedir = "src"
+main = Parser
+executable = "ipkg-to-json"
