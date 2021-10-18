@@ -1,4 +1,4 @@
-module Lexer
+module Ipkg.Lexer
 
 import Data.String.Extra
 import Text.Lexer
@@ -52,4 +52,3 @@ tokenMap =
   , (is ',', const Separator)
   , (is '=', const Equals)
   ]
-

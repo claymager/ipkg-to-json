@@ -4,8 +4,8 @@ import System
 import System.File
 import Language.JSON
 
-import Types
-import Parser
+import Ipkg.Types
+import Ipkg.Parser
 
 dependsObj : Depends -> JSON
 dependsObj (D name (PVB lb li ub ui)) = JObject $ [("name", JString name)] ++

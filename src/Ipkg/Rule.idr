@@ -1,7 +1,6 @@
-module Rule
+module Ipkg.Rule
 
-import Types
-import Lexer
+import Ipkg.Lexer
 
 import Text.Parser
 
@@ -83,3 +82,7 @@ nat : Rule Nat
 nat = terminal "Expected integer" $
   \case NatLit i => Just i
         _ => Nothing
+
+export
+property : String -> Rule ()
+property s = ignore (exact s) >> equals

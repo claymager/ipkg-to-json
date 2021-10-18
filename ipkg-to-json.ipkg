@@ -6,8 +6,8 @@ depends = contrib
 
 main = Main
 executable = "ipkg-to-json"
-modules = Parser,
-          Lexer,
-          Types,
-          Rule,
+modules = Ipkg.Parser,
+          Ipkg.Lexer,
+          Ipkg.Types,
+          Ipkg.Rule,
           Main

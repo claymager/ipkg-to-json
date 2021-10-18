@@ -1,4 +1,4 @@
-module Types
+module Ipkg.Types
 
 import Data.List1
 

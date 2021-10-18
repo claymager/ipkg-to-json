@@ -1,14 +1,13 @@
-module Parser
+module Ipkg.Parser
 
 import Data.List
 import Text.Lexer
 import Text.Parser
 import Text.Parser.Core
 
-import Types
-import Lexer
-import Rule
-
+import Ipkg.Types
+import Ipkg.Lexer
+import Ipkg.Rule
 
 data DescField : Type where
   PVersion : PkgVersion -> DescField
@@ -16,37 +15,20 @@ data DescField : Type where
   PModules : List String -> DescField
   PDepends : List Depends -> DescField
 
+pkgversion : Rule PkgVersion
+pkgversion = PV <$> sepBy1 dot nat
 
 packageName : Rule String
 packageName = exact "package" *> identifier
 
-strField : Rule (String, String)
-strField = do
-  name <- identifier
-  equals
-  value <- stringLit <|> identifier
-  pure (name, value)
-
-pkgversion : Rule PkgVersion
-pkgversion = PV <$> sepBy1 dot nat
-
 version : Rule PkgVersion
-version = do
-  s <- exact "version"
-  equals
-  pkgversion
+version = property "version" >> pkgversion
 
 modules : Rule (List String)
-modules = do
-  ignore $ exact "modules"
-  equals
-  sep identifier
+modules = property "modules" >> sep identifier
 
 deps : Rule (List Depends)
-deps = do
-  ignore $ exact "depends"
-  equals
-  sep depends
+deps = property "depends" >> sep depends
   where
     data Bound = LT PkgVersion Bool | GT PkgVersion Bool
     bound : Rule (List Bound)
@@ -69,11 +51,11 @@ deps = do
     mkBound : List Bound -> PkgVersionBounds -> EmptyRule PkgVersionBounds
     mkBound (LT b i :: bs) pkgbs
       = maybe (mkBound bs . { upperBound := Just b, upperInclusive := i } $ pkgbs)
-              (\_ => fail "Dependency has an upper bound")
+              (\_ => fail "Dependency already has an upper bound")
               pkgbs.upperBound
     mkBound (GT b i :: bs) pkgbs
       = maybe (mkBound bs . { lowerBound := Just b, lowerInclusive := i } $ pkgbs)
-              (\_ => fail "Dependency has a lower bound")
+              (\_ => fail "Dependency already has a lower bound")
               pkgbs.lowerBound
     mkBound [] pkgbs = pure pkgbs
 
@@ -82,6 +64,13 @@ deps = do
       name <- identifier
       bs <- sepBy (op "&&") bound
       pure $ D name !(mkBound (concat bs) anyBounds)
+
+strField : Rule (String, String)
+strField = do
+  name <- identifier
+  equals
+  value <- stringLit <|> identifier
+  pure (name, value)
 
 field : Rule DescField
 field = (PVersion <$> version)
@@ -120,7 +109,7 @@ runParser s = parse expr . fst . processWhitespace $ lex tokenMap s
 errMsgs : List1 (ParsingError PkgToken) -> String
 errMsgs = concatMap decorate . forget
   where decorate : ParsingError PkgToken -> String
-        decorate (Error msg bounds) = "ParseError(\{msg})"
+        decorate (Error msg bounds) = "ParseError(\{msg}; \{show bounds})"
 
 export
 parsePkg : String -> Either String Package
