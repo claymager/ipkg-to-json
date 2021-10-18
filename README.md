@@ -22,8 +22,7 @@ $ ipkg-to-json ipkg-to-json.ipkg | jq
     "Ipkg.Parser",
     "Ipkg.Lexer",
     "Ipkg.Types",
-    "Ipkg.Rule",
-    "Main"
+    "Ipkg.Rule"
   ],
   "sourcedir": "src",
   "main": "Main",
