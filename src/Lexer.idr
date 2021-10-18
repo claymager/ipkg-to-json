@@ -36,7 +36,7 @@ comment : Lexer
 comment = lineComment $ exact "--"
 
 ident : Lexer
-ident = (alpha <|> is '_') <+> many (alpha <|> is '-' <|> is '_' <|> digit)
+ident = (alpha <|> is '_') <+> many (alpha <|> is '-' <|> is '_' <|> digit <|> is '.')
 
 export
 tokenMap : TokenMap PkgToken

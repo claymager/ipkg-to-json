@@ -1,5 +1,6 @@
 module Parser
 
+import System
 import System.File
 import Data.List
 import Text.Lexer
@@ -14,6 +15,7 @@ import Rule
 data DescField : Type where
   PVersion : PkgVersion -> DescField
   PStrField : String -> String -> DescField
+  PModules : List String -> DescField
   PDepends : List Depends -> DescField
 
 
@@ -36,6 +38,12 @@ version = do
   equals
   pkgversion
 
+modules : Rule (List String)
+modules = do
+  ignore $ exact "modules"
+  equals
+  sep identifier
+
 deps : Rule (List Depends)
 deps = do
   ignore $ exact "depends"
@@ -44,10 +52,18 @@ deps = do
   where
     data Bound = LT PkgVersion Bool | GT PkgVersion Bool
     bound : Rule (List Bound)
-    bound = (op "<=" >> pure [ LT !pkgversion True ])
-        <|> (op ">=" >> pure [ GT !pkgversion True ])
-        <|> (op "<" >> pure [ LT !pkgversion False ])
-        <|> (op ">" >> pure [ GT !pkgversion False ])
+    bound = do op "<="
+               v <- pkgversion
+               pure [ LT v True ]
+        <|> do op ">="
+               v <- pkgversion
+               pure [ GT v True ]
+        <|> do op "<"
+               v <- pkgversion
+               pure [ LT v False ]
+        <|> do op ">"
+               v <- pkgversion
+               pure [ GT v False ]
         <|> do op "=="
                v <- pkgversion
                pure [LT v True, GT v True]
@@ -68,28 +84,29 @@ deps = do
       name <- identifier
       bs <- sepBy (op "&&") bound
       pure $ D name !(mkBound (concat bs) anyBounds)
-  
+
 field : Rule DescField
-field = (version >>= pure . PVersion)
-    <|> (deps >>= pure . PDepends)
-    <|> (strField >>= pure . uncurry PStrField)
+field = (PVersion <$> version)
+    <|> (PDepends <$> deps)
+    <|> (PModules <$> modules)
+    <|> (uncurry PStrField <$> strField)
 
 addField : DescField -> Package -> Package
 addField (PVersion v) = { version := Just v }
 addField (PStrField nm val) = { strFields $= ((nm, val) ::) }
 addField (PDepends ds) = { depends := ds }
+addField (PModules ms) = { modules := ms }
 
 
 expr : Rule Package
 expr = do
   pkg <- def <$> packageName
   fields <- some field
-  -- eof
+  eof
   pure $ foldr addField pkg fields
-       
 
-processWhitespace : (List (WithBounds PkgToken), Int, Int, String) ->
-                    (List (WithBounds PkgToken), Int, Int, String)
+processWhitespace : (List (WithBounds PkgToken), a) ->
+                    (List (WithBounds PkgToken), a)
 processWhitespace = mapFst (filter notComment)
   where
     notComment : WithBounds PkgToken -> Bool
@@ -99,30 +116,14 @@ processWhitespace = mapFst (filter notComment)
       notComment _ | _ = True
 
 
-test : String -> Either (List1 (ParsingError PkgToken)) (Package, List (WithBounds PkgToken))
-test s = parse expr . fst . processWhitespace $ lex tokenMap s
+runParser : String -> Either (List1 (ParsingError PkgToken)) (Package, List (WithBounds PkgToken))
+runParser s = parse expr . fst . processWhitespace $ lex tokenMap s
 
-Show (ParsingError PkgToken) where
-  show (Error s e) = "ParseError: \{s}\n\{show e}"
+errMsgs : List1 (ParsingError PkgToken) -> String
+errMsgs = concatMap decorate . forget
+  where decorate : ParsingError PkgToken -> String
+        decorate (Error msg bounds) = "ParseError(\{msg})"
 
-[LWPT] Show (List (WithBounds PkgToken)) where
-  show ((MkBounded val isIrrelevant bounds) :: t) = "\nval: \{show val}\nbounds: \{show bounds}\n" ++ show t
-  show [] = ""
-
-testStr : IO String
-testStr = either (const "") id <$> readFile "ipkg-to-json.ipkg"
-
-lexemes : IO (List (WithBounds PkgToken))
-lexemes = testStr >>= pure . fst . processWhitespace . lex tokenMap
-
-parsemes : IO (Either (List1 (ParsingError PkgToken)) (Package, List (WithBounds PkgToken)))
-parsemes = parse expr <$> lexemes
-
-showLexemes : IO ()
-showLexemes = traverse_ printLn . fst . processWhitespace $ lex tokenMap !testStr
-
-main : IO ()
-main = do
-  Right s <- readFile "ipkg-to-json.ipkg"
-    | Left err => putStrLn $ show err
-  putStrLn . either (show . head) show $ test s
+export
+parsePkg : String -> Either String Package
+parsePkg = bimap errMsgs fst . runParser
