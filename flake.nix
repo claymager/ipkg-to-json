@@ -1,5 +1,5 @@
 {
-  description = "My Idris 2 package";
+  description = "Ipkg file converter";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.idris2-pkgs.url = "github:claymager/idris2-pkgs";
@@ -18,10 +18,7 @@
       {
         defaultPackage = ipkg-to-json;
         devShell = pkgs.mkShell {
-          buildInputs = [ pkgs.rlwrap pkgs.idris2.packages.lsp.withPkgs.idris2api pkgs.idris2.withPkgs.idris2api ];
-          shellHook = ''
-            exec fish
-            '';
+          buildInputs = with pkgs; [ rlwrap idris2 idris2.packages.lsp ];
         };
       }
     );
