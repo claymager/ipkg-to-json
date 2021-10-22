@@ -3,6 +3,7 @@ version = 0.1.0
 
 sourcedir = "src"
 depends = contrib
+license = "bsd3"
 
 main = Main
 executable = "ipkg-to-json"
